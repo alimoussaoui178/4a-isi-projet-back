@@ -1,6 +1,6 @@
 from fastapi import APIRouter, FastAPI
 
-from routers import auth, orders, users
+from routers import auth, closing_days, menus, orders, products, users
 
 app = FastAPI(
     title="Pol-eat-heck API",
@@ -24,8 +24,8 @@ api.include_router(users.router)
 api.include_router(orders.router)
 
 # Partie Ali : catalogue (products, menus, closing_days)
-# api.include_router(products.router)
-# api.include_router(menus.router)
-# api.include_router(closing_days.router)
+api.include_router(products.router)
+api.include_router(menus.router)
+api.include_router(closing_days.router)
 
 app.include_router(api)
