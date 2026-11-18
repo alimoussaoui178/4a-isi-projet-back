@@ -1,5 +1,7 @@
 from fastapi import APIRouter, FastAPI
 
+from routers import auth, orders, users
+
 app = FastAPI(
     title="Pol-eat-heck API",
     description="API du projet Pol-eat-heck (contrat back ↔ front)",
@@ -16,7 +18,14 @@ def health():
     return {"status": "ok"}
 
 
-# Les routers (auth, users, products, menus, closing_days, orders)
-# seront ajoutés ici à l'étape suivante avec api.include_router(...).
+# Partie Yazi : utilisateurs et commandes
+api.include_router(auth.router)
+api.include_router(users.router)
+api.include_router(orders.router)
+
+# Partie Ali : catalogue (products, menus, closing_days)
+# api.include_router(products.router)
+# api.include_router(menus.router)
+# api.include_router(closing_days.router)
 
 app.include_router(api)
