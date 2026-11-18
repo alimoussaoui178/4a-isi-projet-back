@@ -1,11 +1,23 @@
+from contextlib import asynccontextmanager
+
 from fastapi import APIRouter, FastAPI
 
-from routers import auth, orders, users
+from database import init_db
+from routers import auth, closing_days, menus, orders, products, users
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Au démarrage du serveur : crée les tables manquantes dans polieatheck.db
+    init_db()
+    yield
+
 
 app = FastAPI(
     title="Pol-eat-heck API",
     description="API du projet Pol-eat-heck (contrat back ↔ front)",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 # Toutes les routes de l'API sont sous /api (voir le contrat).
@@ -24,8 +36,8 @@ api.include_router(users.router)
 api.include_router(orders.router)
 
 # Partie Ali : catalogue (products, menus, closing_days)
-# api.include_router(products.router)
-# api.include_router(menus.router)
-# api.include_router(closing_days.router)
+api.include_router(products.router)
+api.include_router(menus.router)
+api.include_router(closing_days.router)
 
 app.include_router(api)
