@@ -1,0 +1,9 @@
+[project]
+name = "polieatheck-back"
+version = "0.1.0"
+description = "API FastAPI du projet Pol-eat-heck"
+requires-python = ">=3.10"
+
+# Point d'entrée lu par `fastapi dev` : la variable `app` du fichier main.py
+[tool.fastapi]
+entrypoint = "main:app"

@@ -1,0 +1,8 @@
+# Framework web + serveur de dev (commande `fastapi dev`)
+fastapi[standard]
+# ORM : modèles de tables + connexion SQLite
+sqlmodel
+# Hash des mots de passe (algorithme Argon2)
+pwdlib[argon2]
+# Création et vérification des tokens JWT
+pyjwt

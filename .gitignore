@@ -1,0 +1,17 @@
+# Environnement virtuel Python
+.venv/
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Base SQLite : chacun la recrée à partir des scripts du dépôt db
+*.db
+
+# Secrets locaux (clé JWT, etc.)
+.env
+
+# Éditeurs / OS
+.vscode/
+.idea/
+.DS_Store
