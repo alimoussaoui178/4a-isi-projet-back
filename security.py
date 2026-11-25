@@ -1,45 +1,59 @@
-"""Sécurité : qui est connecté, et a-t-il le droit ?
+import os
+from datetime import datetime, timedelta, timezone
 
-PALIER 1 : VERSION BIDON.
-Les deux dépendances ci-dessous renvoient toujours un faux utilisateur admin,
-sans vérifier le token. Ça permet à tout le monde (Ali compris) de déclarer
-dès maintenant les routes protégées avec Depends(...).
-Au palier 3, on remplacera l'intérieur des fonctions (vérification du JWT,
-compte bloqué, rôle) SANS changer leur nom ni leur utilisation.
-"""
-
-from fastapi import Depends
+import jwt
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pwdlib import PasswordHash
+from sqlmodel import Session
 
-# Lit le header "Authorization: Bearer <token>".
-# auto_error=False : au palier 1, on accepte les requêtes sans token.
-# Effet bonus : /docs affiche un bouton "Authorize" pour coller un token.
+from database import get_session
+from models import User
+
+SECRET_KEY = os.getenv("POLIEATHECK_SECRET", "cle-de-dev-a-changer-en-production")
+ALGORITHM = "HS256"
+TOKEN_DURATION = timedelta(hours=24)
+
+password_hasher = PasswordHash.recommended()
 bearer_scheme = HTTPBearer(auto_error=False)
 
-# Faux utilisateur au format "User" du contrat
-FAKE_USER = {
-    "id": 1,
-    "username": "admin",
-    "role": "admin",
-    "is_blocked": False,
-    "created_at": "2026-11-18T09:30:00",
-}
+
+def hash_password(password: str) -> str:
+    return password_hasher.hash(password)
+
+
+def verify_password(password: str, password_hash: str) -> bool:
+    return password_hasher.verify(password, password_hash)
+
+
+def create_access_token(user: User) -> str:
+    expiration = datetime.now(timezone.utc) + TOKEN_DURATION
+    payload = {"sub": str(user.id), "exp": expiration}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-) -> dict:
-    """Niveau d'accès "User" : token valide et compte non bloqué.
+    session: Session = Depends(get_session),
+) -> User:
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Connexion requise")
 
-    Palier 3 : décoder le JWT, charger l'utilisateur,
-    401 si token absent ou invalide, 403 si compte bloqué.
-    """
-    return FAKE_USER
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload["sub"])
+    except (jwt.InvalidTokenError, KeyError, ValueError):
+        raise HTTPException(status_code=401, detail="Token invalide ou expiré")
+
+    user = session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Token invalide ou expiré")
+    if user.is_blocked:
+        raise HTTPException(status_code=403, detail="Compte bloqué")
+    return user
 
 
-def require_admin(user: dict = Depends(get_current_user)) -> dict:
-    """Niveau d'accès "Admin" : token valide et rôle admin.
-
-    Palier 3 : 403 si user["role"] != "admin".
-    """
+def require_admin(user: User = Depends(get_current_user)) -> User:
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
     return user
