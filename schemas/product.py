@@ -5,7 +5,7 @@ l'API reçoit et renvoie. FastAPI s'en sert pour valider les données
 (422 automatique si un champ manque ou a un mauvais type) et pour /docs.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ProductCreate(BaseModel):
@@ -29,6 +29,21 @@ class ProductUpdate(BaseModel):
     price_cents: int | None = Field(default=None, ge=0)
     stock: int | None = Field(default=None, ge=0)
     is_available: bool | None = None
+
+    @field_validator("name", "price_cents", "stock", "is_available")
+    @classmethod
+    def refuser_null(cls, value):
+        """Refuse un null ENVOYÉ explicitement pour une colonne NOT NULL.
+
+        Sans ça, {"name": null} passait la validation puis SQLite le refusait :
+        erreur 500. Maintenant c'est une erreur 422 claire.
+        Un champ simplement absent n'est pas concerné : Pydantic ne lance pas
+        ce validateur sur les valeurs par défaut, seulement sur ce qui est envoyé.
+        (description peut rester null : sa colonne l'accepte.)
+        """
+        if value is None:
+            raise ValueError("ce champ ne peut pas être null")
+        return value
 
 
 class ProductOut(BaseModel):
