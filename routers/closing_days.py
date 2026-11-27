@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from database import get_session
-from models import ClosingDay
+from models import ClosingDay, User
 from schemas.closing_day import ClosingDayCreate, ClosingDayOut
 from security import require_admin
 
@@ -32,7 +32,7 @@ def list_closing_days(start: date, end: date, session: Session = Depends(get_ses
              summary="Ajouter un jour de fermeture (admin)")
 def create_closing_day(
     body: ClosingDayCreate,
-    admin: dict = Depends(require_admin),
+    admin: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
     if body.date < date.today():
@@ -49,7 +49,7 @@ def create_closing_day(
 @router.delete("/closing-days/{day}", status_code=204, summary="Rouvrir un jour (admin)")
 def delete_closing_day(
     day: date,
-    admin: dict = Depends(require_admin),
+    admin: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
     closing_day = session.get(ClosingDay, day)

@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from database import get_session
-from models import Product
+from models import Product, User
 from schemas.product import ProductCreate, ProductOut, ProductUpdate
 from security import require_admin
 
@@ -44,7 +44,7 @@ def read_product(product_id: int, session: Session = Depends(get_session)):
 @router.post("/products", status_code=201, response_model=ProductOut, summary="Créer un produit (admin)")
 def create_product(
     body: ProductCreate,
-    admin: dict = Depends(require_admin),
+    admin: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
     product = Product(**body.model_dump())
@@ -58,7 +58,7 @@ def create_product(
 def update_product(
     product_id: int,
     body: ProductUpdate,
-    admin: dict = Depends(require_admin),
+    admin: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
     product = get_product_or_404(product_id, session)
@@ -74,7 +74,7 @@ def update_product(
 @router.delete("/products/{product_id}", status_code=204, summary="Supprimer un produit (admin)")
 def delete_product(
     product_id: int,
-    admin: dict = Depends(require_admin),
+    admin: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
     product = get_product_or_404(product_id, session)

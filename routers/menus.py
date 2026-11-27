@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from database import get_session
-from models import Menu, MenuWeekday, Product
+from models import Menu, MenuWeekday, Product, User
 from regles import est_jour_ferme, menu_est_servi
 from schemas.menu import Availability, MenuCreate, MenuOut
 from security import require_admin
@@ -81,7 +81,7 @@ def read_menu(menu_id: int, session: Session = Depends(get_session)):
 @router.post("/menus", status_code=201, response_model=MenuOut, summary="Créer un menu (admin)")
 def create_menu(
     body: MenuCreate,
-    admin: dict = Depends(require_admin),
+    admin: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
     # 400 si un des product_ids n'existe pas
@@ -106,7 +106,7 @@ def create_menu(
 def update_menu_availability(
     menu_id: int,
     body: Availability,
-    admin: dict = Depends(require_admin),
+    admin: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
     menu = get_menu_or_404(menu_id, session)
@@ -120,7 +120,7 @@ def update_menu_availability(
 @router.delete("/menus/{menu_id}", status_code=204, summary="Supprimer un menu (admin)")
 def delete_menu(
     menu_id: int,
-    admin: dict = Depends(require_admin),
+    admin: User = Depends(require_admin),
     session: Session = Depends(get_session),
 ):
     menu = get_menu_or_404(menu_id, session)
